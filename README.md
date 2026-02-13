@@ -13,6 +13,7 @@
 
 | 脚本 | 功能 | 匹配站点 |
 |------|------|----------|
+| 🚀 [github-enhancement.user.js](./src/github-enhancement.user.js) | GitHub 增强：高速下载、快捷操作 | `github.com` |
 | 🎛️ [lucky-hide-menu-items.user.js](./src/lucky-hide-menu-items.user.js) | 隐藏 Lucky 管理面板侧边栏指定菜单项 | `mylucky.com` |
 
 > 注意：如果是自托管服务、使用的自己的域名，需要自行修改脚本中 `@match` 字段匹配的网址。
