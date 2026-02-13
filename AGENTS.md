@@ -2,6 +2,10 @@
 
 本项目包含用于 Tampermonkey 的浏览器用户脚本集合，用于定制和增强网页功能。
 
+## 维护者信息
+
+[pdone](https://github.com/pdone/jset)
+
 ## 📁 项目结构
 
 ```
