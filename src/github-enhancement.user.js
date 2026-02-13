@@ -2,7 +2,7 @@
 // @name         Github Enhancement
 // @name:zh-CN   Github 增强
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      0.0.2
 // @description  High-speed download of Git Clone/SSH, Release, Raw, Code(ZIP) and other files
 // @description:zh-CN  高速下载 Git Clone/SSH、Release、Raw、Code(ZIP) 等文件 (公益加速)、项目列表单文件快捷下载 (☁)
 // @author       pdone
@@ -62,20 +62,29 @@
 
     const URLS = {
         download: [
-            ['https://gh-proxy.org/https://github.com', 'Main', '[Cloudflare] - 该公益加速源由 [gh-proxy.com] 提供'],
+            ['https://gh-proxy.org/https://github.com', 'Global', '[Cloudflare] - 全球加速，由 [gh-proxy.com] 提供'],
+            ['https://v6.gh-proxy.org/https://github.com', 'IPv6', '[Cloudflare+国内优选+IPv6] - 国内优化，支持 IPv6，由 [gh-proxy.com] 提供'],
+            ['https://hk.gh-proxy.org/https://github.com', 'HK', '[中国香港] - 国内线路优化，secbit.ai & Sharon CDN 赞助（大文件下载不建议使用）'],
             ['https://cdn.gh-proxy.org/https://github.com', 'CDN', '[Fastly CDN] - 该公益加速源由 [gh-proxy.com] 提供'],
-            ['https://edgeone.gh-proxy.org/https://github.com', 'Edge', '[edgeone] - 该公益加速源由 [gh-proxy.com] 提供'],
+            ['https://edgeone.gh-proxy.org/https://github.com', 'Edge', '[EdgeOne] - 全球加速，该公益加速源由 [gh-proxy.com] 提供'],
         ],
         clone: [
-            ['https://hk.gh-proxy.org/https://github.com', 'HK', '[中国香港] - 该公益加速源由 [gh-proxy.com] 提供'],
+            ['https://gh-proxy.org/https://github.com', 'Global', '[Cloudflare] - 全球加速，由 [gh-proxy.com] 提供'],
+            ['https://v6.gh-proxy.org/https://github.com', 'IPv6', '[Cloudflare+国内优选+IPv6] - 国内优化，支持 IPv6，由 [gh-proxy.com] 提供'],
+            ['https://hk.gh-proxy.org/https://github.com', 'HK', '[中国香港] - 国内线路优化，secbit.ai & Sharon CDN 赞助'],
+            ['https://cdn.gh-proxy.org/https://github.com', 'CDN', '[Fastly CDN] - 该公益加速源由 [gh-proxy.com] 提供'],
+            ['https://edgeone.gh-proxy.org/https://github.com', 'Edge', '[EdgeOne] - 全球加速，该公益加速源由 [gh-proxy.com] 提供'],
         ],
         cloneSsh: [
             ['ssh://git@ssh.github.com:443/', 'Github', '[Github] - Github 官方提供的 443 端口的 SSH（依然是 SSH 协议），适用于限制访问 22 端口的网络环境'],
         ],
         raw: [
             ['https://raw.githubusercontent.com', 'Github', '[Github] - 缓存：无（或很短）'],
-            ['https://hk.gh-proxy.org/https://raw.githubusercontent.com', 'HK', '[中国香港] - 该公益加速源由 [gh-proxy.com] 提供 - 缓存：有（官方注明 2 小时）'],
+            ['https://gh-proxy.org/https://raw.githubusercontent.com', 'Global', '[Cloudflare] - 全球加速，由 [gh-proxy.com] 提供 - 缓存：有'],
+            ['https://v6.gh-proxy.org/https://raw.githubusercontent.com', 'IPv6', '[Cloudflare+国内优选+IPv6] - 国内优化，支持 IPv6，由 [gh-proxy.com] 提供 - 缓存：有'],
+            ['https://hk.gh-proxy.org/https://raw.githubusercontent.com', 'HK', '[中国香港] - 国内线路优化，secbit.ai & Sharon CDN 赞助 - 缓存：有（官方注明 2 小时）'],
             ['https://cdn.gh-proxy.org/https://raw.githubusercontent.com', 'CDN', '[Fastly CDN] - 该公益加速源由 [gh-proxy.com] 提供 - 缓存：有'],
+            ['https://edgeone.gh-proxy.org/https://raw.githubusercontent.com', 'Edge', '[EdgeOne] - 全球加速，该公益加速源由 [gh-proxy.com] 提供 - 缓存：有'],
         ]
     };
 
