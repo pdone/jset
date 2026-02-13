@@ -22,20 +22,26 @@
 // @license      MIT
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
+
+    // 跳过 iframe 中执行
+    if (window.self !== window.top) {
+        console.log('[Github Enhancement] 在 iframe 中运行，跳过执行');
+        return;
+    }
+
+    console.log('[Github Enhancement] 脚本加载');
 
     // ============================================
     // 配置管理
     // ============================================
     const CONFIG = {
         storageKeys: {
-            rawFast: 'ge_menu_raw_fast',
             rawDownLink: 'menu_rawDownLink',
             gitClone: 'menu_gitClone'
         },
         defaults: {
-            rawFast: 1,
             rawDownLink: true,
             gitClone: true
         },
@@ -99,27 +105,11 @@
         log(...args) {
             console.log('[Github Enhancement]', ...args);
         },
-        
+
         error(...args) {
             console.error('[Github Enhancement]', ...args);
         },
-        
-        shuffleArray(array, count) {
-            if (!Array.isArray(array) || array.length === 0) return [];
-            const shuffled = [...array];
-            const actualCount = Math.min(count, shuffled.length);
-            let i = shuffled.length;
-            const min = i - actualCount;
-            let temp, index;
-            while (i-- > min) {
-                index = Math.floor((i + 1) * Math.random());
-                temp = shuffled[index];
-                shuffled[index] = shuffled[i];
-                shuffled[i] = temp;
-            }
-            return shuffled.slice(min);
-        },
-        
+
         toggleVisibility(showSelector, hideSelector, container) {
             container.querySelectorAll(showSelector).forEach(el => el.style.display = 'inline');
             container.querySelectorAll(hideSelector).forEach(el => el.style.display = 'none');
@@ -130,8 +120,6 @@
     // 状态管理
     // ============================================
     const state = {
-        menuRawFast: null,
-        menuRawFastId: null,
         menuRawDownLinkId: null,
         menuGitCloneId: null,
         menuFeedBackId: null,
@@ -144,12 +132,6 @@
     // ============================================
     function initConfig() {
         try {
-            state.menuRawFast = GM_getValue(CONFIG.storageKeys.rawFast);
-            if (state.menuRawFast == null) {
-                state.menuRawFast = CONFIG.defaults.rawFast;
-                GM_setValue(CONFIG.storageKeys.rawFast, state.menuRawFast);
-            }
-            
             [CONFIG.storageKeys.rawDownLink, CONFIG.storageKeys.gitClone].forEach(key => {
                 if (GM_getValue(key) == null) {
                     GM_setValue(key, CONFIG.defaults[key.replace('menu_', '')]);
@@ -166,56 +148,25 @@
     function registerMenuCommand() {
         try {
             if (state.menuFeedBackId) {
-                [state.menuRawFastId, state.menuRawDownLinkId, state.menuGitCloneId, state.menuFeedBackId]
+                [state.menuRawDownLinkId, state.menuGitCloneId, state.menuFeedBackId]
                     .forEach(id => id && GM_unregisterMenuCommand(id));
-                state.menuRawFast = GM_getValue(CONFIG.storageKeys.rawFast);
             }
-            
-            if (state.menuRawFast > URLS.raw.length - 1) {
-                state.menuRawFast = 0;
-            }
-            
-            const numbers = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
-            
-            if (GM_getValue(CONFIG.storageKeys.rawDownLink)) {
-                state.menuRawFastId = GM_registerMenuCommand(
-                    `${numbers[state.menuRawFast] || '0️⃣'} [ ${URLS.raw[state.menuRawFast]?.[1] || 'Github'} ] 加速源 (☁) - 点击切换`,
-                    toggleRawFast
-                );
-            }
-            
+
             state.menuRawDownLinkId = GM_registerMenuCommand(
                 `${GM_getValue(CONFIG.storageKeys.rawDownLink) ? '✅' : '❌'} 项目列表单文件快捷下载 (☁)`,
                 () => toggleFeature(CONFIG.storageKeys.rawDownLink, '项目列表单文件快捷下载 (☁)')
             );
-            
+
             state.menuGitCloneId = GM_registerMenuCommand(
                 `${GM_getValue(CONFIG.storageKeys.gitClone) ? '✅' : '❌'} 添加 git clone 命令`,
                 () => toggleFeature(CONFIG.storageKeys.gitClone, '添加 git clone 命令')
             );
-            
+
             state.menuFeedBackId = GM_registerMenuCommand('💬 反馈 & 建议', () => {
-                window.GM_openInTab('https://github.com/pdone/jset/issues', {active: true, insert: true, setParent: true});
+                window.GM_openInTab('https://github.com/pdone/jset/issues', { active: true, insert: true, setParent: true });
             });
         } catch (error) {
             utils.error('注册菜单命令失败:', error);
-        }
-    }
-
-    function toggleRawFast() {
-        try {
-            if (state.menuRawFast >= URLS.raw.length - 1) {
-                state.menuRawFast = 0;
-            } else {
-                state.menuRawFast++;
-            }
-            GM_setValue(CONFIG.storageKeys.rawFast, state.menuRawFast);
-            delRawDownLink();
-            addRawDownLink();
-            GM_notification({text: '已切换加速源为：' + (URLS.raw[state.menuRawFast]?.[1] || 'Github'), timeout: 3000});
-            registerMenuCommand();
-        } catch (error) {
-            utils.error('切换加速源失败:', error);
         }
     }
 
@@ -239,12 +190,7 @@
     // URL 构建
     // ============================================
     function getDownloadUrls() {
-        try {
-            return utils.shuffleArray(URLS.download, URLS.download.length);
-        } catch (error) {
-            utils.error('获取下载 URL 失败:', error);
-            return URLS.download;
-        }
+        return URLS.download;
     }
 
     // ============================================
@@ -254,7 +200,7 @@
         try {
             const styleId = 'GE-styles';
             if (document.getElementById(styleId)) return;
-            
+
             const style = document.createElement('style');
             style.id = styleId;
             style.textContent = `
@@ -279,7 +225,7 @@
         try {
             let backColor = '#ffffff', fontColor = '#888888';
             const root = document.lastElementChild;
-            
+
             if (root?.dataset.colorMode === 'dark') {
                 if (root.dataset.darkTheme === 'dark_dimmed') {
                     backColor = '#272e37';
@@ -301,7 +247,7 @@
                     }
                 }
             }
-            
+
             let styleEl = document.getElementById('GE-Github');
             if (!styleEl) {
                 styleEl = document.createElement('style');
@@ -322,36 +268,36 @@
         try {
             const footers = document.querySelectorAll(CONFIG.selectors.boxFooter);
             if (footers.length === 0 || !location.pathname.includes('/releases')) return;
-            
+
             const downloadUrls = getDownloadUrls();
             let divDisplay = document.documentElement.clientWidth > 755
                 ? 'margin-top: -3px; margin-left: 8px; display: inherit;'
                 : 'margin-left: -90px;';
-            
+
             if (!document.getElementById('GE-RS-style')) {
                 const style = document.createElement('style');
                 style.id = 'GE-RS-style';
                 style.textContent = '@media (min-width: 768px) {.Box-footer li.Box-row>div>span.color-fg-muted {min-width: 27px !important;}}';
                 footers[0].appendChild(style);
             }
-            
+
             footers.forEach(footer => {
                 if (footer.querySelector(`.${CONFIG.classes.releaseSpeed}`)) return;
-                
+
                 footer.querySelectorAll('li.Box-row a').forEach(link => {
                     const hrefParts = link.href.split(location.host);
                     if (hrefParts.length < 2) return;
-                    
+
                     let html = `<div class="${CONFIG.classes.releaseSpeed}" style="${divDisplay}">`;
-                    
+
                     downloadUrls.forEach(mirror => {
                         const url = mirror[3] !== undefined && hrefParts[1].includes('/archive/')
                             ? mirror[3] + hrefParts[1]
                             : mirror[0] + hrefParts[1];
-                        
-                        html += `<a style="padding:0 6px; margin-right:-1px; border-radius:2px; background-color:var(--GE-background-color); border-color:var(--borderColor-default); font-size:11px; color:var(--GE-font-color);" class="btn" href="${url}" target="_blank" title="${mirror[2]}\n\n提示：如果不想要点击链接在前台打开空白新标签页（一闪而过影响体验），可以 [鼠标中键] 或 [Ctrl+鼠标左键] 点击加速链接即可在后台打开新标签页！" rel="noreferrer noopener nofollow">${mirror[1]}</a>`;
+
+                        html += `<a style="padding:0 6px; margin-right:-1px; border-radius:2px; background-color:var(--GE-background-color); border-color:var(--borderColor-default); font-size:11px; color:var(--GE-font-color);" class="btn" href="${url}" target="_blank" title="${mirror[2]}" rel="noreferrer noopener nofollow">${mirror[1]}</a>`;
                     });
-                    
+
                     html += '</div>';
                     link.parentElement?.nextElementSibling?.insertAdjacentHTML('beforeend', html);
                 });
@@ -368,38 +314,38 @@
         try {
             const html = target.querySelector('ul[class^=prc-ActionList-ActionList-]>li:last-child');
             if (!html) return;
-            
+
             const scriptEl = document.querySelector('react-partial[partial-name=repos-overview]>script[data-target="react-partial.embeddedData"]');
             if (!scriptEl?.textContent) return;
-            
+
             const zipIndex = scriptEl.textContent.indexOf('"zipballUrl":"');
             if (zipIndex === -1) return;
-            
+
             const hrefSlice = scriptEl.textContent.slice(zipIndex + 14);
             const zipUrl = hrefSlice.slice(0, hrefSlice.indexOf('"'));
-            
+
             const downloadUrls = getDownloadUrls();
             let resultHtml = '';
-            
+
             downloadUrls.forEach(mirror => {
                 if (mirror[3] === '') return;
-                
+
                 const clone = html.cloneNode(true);
                 const link = clone.querySelector('a[href$=".zip"]');
                 const span = clone.querySelector('span[id]');
-                
+
                 if (!link) return;
-                
+
                 const url = mirror[3] !== undefined ? mirror[3] + zipUrl : mirror[0] + zipUrl;
                 link.href = url;
-                link.setAttribute('title', mirror[2].replaceAll('&#10;', '\n') + '\n\n提示：如果不想要点击链接在前台打开空白新标签页（一闪而过影响体验），可以 [鼠标中键] 或 [Ctrl+鼠标左键] 点击加速链接即可在后台打开新标签页！');
+                link.setAttribute('title', mirror[2].replaceAll('&#10;', '\n'));
                 link.setAttribute('target', '_blank');
                 link.setAttribute('rel', 'noreferrer noopener nofollow');
                 if (span) span.textContent = 'Download ZIP ' + mirror[1];
-                
+
                 resultHtml += clone.outerHTML;
             });
-            
+
             html.insertAdjacentHTML('afterend', resultHtml);
         } catch (error) {
             utils.error('添加 ZIP 下载加速失败:', error);
@@ -421,36 +367,36 @@
         try {
             const input = target.querySelector('input[value^="https:"]:not([title])');
             if (!input) return;
-            
+
             const hrefSplit = input.value.split(location.host)[1];
             if (!hrefSplit) return;
-            
+
             if (input.nextElementSibling) input.nextElementSibling.hidden = true;
-            
+
             const nextSpan = input.parentElement?.nextElementSibling;
             if (nextSpan?.tagName === 'SPAN') {
                 nextSpan.textContent += ' (↑点击上面文字可复制)';
             }
-            
+
             let gitClonePrefix = '';
             if (GM_getValue(CONFIG.storageKeys.gitClone)) {
                 gitClonePrefix = 'git clone ';
                 input.value = gitClonePrefix + input.value;
                 input.setAttribute('value', input.value);
             }
-            
+
             let html = '';
             URLS.clone.forEach(mirror => {
                 const clone = input.cloneNode(true);
                 const url = mirror[0] + hrefSplit;
-                
+
                 clone.title = `${url}\n\n${mirror[2].replaceAll('&#10;', '\n')}\n\n提示：点击文字可直接复制`;
                 clone.setAttribute('value', gitClonePrefix + url);
                 html += `<div style="margin-top:4px;" class="${CONFIG.classes.gitClone} ${input.parentElement?.className || ''}">${clone.outerHTML}</div>`;
             });
-            
+
             input.parentElement?.insertAdjacentHTML('afterend', html);
-            
+
             const parent = input.parentElement?.parentElement;
             if (parent && !parent.classList.contains(CONFIG.classes.gitClonePanel)) {
                 parent.classList.add(CONFIG.classes.gitClonePanel);
@@ -469,24 +415,24 @@
         try {
             const input = target.querySelector('input[value^="git@"]:not([title])');
             if (!input) return;
-            
+
             const hrefSplit = input.value.split(':')[1];
             if (!hrefSplit) return;
-            
+
             input.nextElementSibling && (input.nextElementSibling.hidden = true);
-            
+
             const nextSpan = input.parentElement?.nextElementSibling;
             if (nextSpan?.tagName === 'SPAN') {
                 nextSpan.textContent += ' (↑点击上面文字可复制)';
             }
-            
+
             let gitClonePrefix = '';
             if (GM_getValue(CONFIG.storageKeys.gitClone)) {
                 gitClonePrefix = 'git clone ';
                 input.value = gitClonePrefix + input.value;
                 input.setAttribute('value', input.value);
             }
-            
+
             let html = '';
             URLS.cloneSsh.forEach(mirror => {
                 const clone = input.cloneNode(true);
@@ -495,9 +441,9 @@
                 clone.setAttribute('value', gitClonePrefix + url);
                 html += `<div style="margin-top:4px;" class="${CONFIG.classes.gitCloneSsh} ${input.parentElement?.className || ''}">${clone.outerHTML}</div>`;
             });
-            
+
             input.parentElement?.insertAdjacentHTML('afterend', html);
-            
+
             const parent = input.parentElement?.parentElement;
             if (parent && !parent.classList.contains(CONFIG.classes.gitClonePanel)) {
                 parent.classList.add(CONFIG.classes.gitClonePanel);
@@ -519,19 +465,19 @@
         try {
             const button = document.querySelector(CONFIG.selectors.rawButton);
             if (!button) return;
-            
+
             const href = location.href.replace(`https://${location.host}`, '');
             const href2 = href.replace('/blob/', '/');
             let html = '';
-            
+
             for (let i = 1; i < URLS.raw.length; i++) {
                 const mirror = URLS.raw[i];
                 const isGhMirror = mirror[0].includes('/gh') && mirror[0].indexOf('/gh') + 3 === mirror[0].length && !mirror[0].includes('cdn.staticaly.com');
                 const url = isGhMirror ? mirror[0] + href.replace('/blob/', '@') : mirror[0] + href2;
-                
+
                 html += `<a href="${url}" title="${mirror[2]}\n\n提示：如果想要直接下载，可使用 [Alt + 左键] 点击加速按钮或 [右键 - 另存为...]" target="_blank" role="button" rel="noreferrer noopener nofollow" data-size="small" data-variant="default" class="${button.className} ${CONFIG.classes.rawFile}" style="border-radius:0;margin-left:-1px;">${mirror[1].replace(/ \d/, '')}</a>`;
             }
-            
+
             document.querySelectorAll(`.${CONFIG.classes.rawFile}`).forEach(el => el.remove());
             button.insertAdjacentHTML('afterend', html);
         } catch (error) {
@@ -556,28 +502,28 @@
     function addRawDownLink() {
         try {
             if (!GM_getValue(CONFIG.storageKeys.rawDownLink)) return;
-            
+
             const files = document.querySelectorAll(CONFIG.selectors.fileRow);
             if (files.length === 0 || location.pathname.includes('/tags')) return;
             if (document.querySelectorAll(`.${CONFIG.classes.fileDownLink}`).length > 0) return;
-            
+
             files.forEach(fileEl => {
                 const tr = fileEl.parentNode?.parentNode;
                 const link = tr?.querySelector('[role="rowheader"] > .css-truncate.css-truncate-target.d-block.width-fit > a, .react-directory-truncate>a');
                 if (!link) return;
-                
+
                 const name = link.innerText;
                 const href = link.getAttribute('href');
                 if (!href) return;
-                
-                const mirror = URLS.raw[state.menuRawFast];
-                if (!mirror) return;
-                
+
+                // 使用第一个加速源（Global）
+                const mirror = URLS.raw[1];
+
                 const isGhMirror = mirror[0].includes('/gh') && mirror[0].indexOf('/gh') + 3 === mirror[0].length && !mirror[0].includes('cdn.staticaly.com');
                 const url = isGhMirror ? mirror[0] + href.replace('/blob/', '@') : mirror[0] + href.replace('/blob/', '/');
-                
-                fileEl.insertAdjacentHTML('afterend', `<a href="${url}" download="${name}" target="_blank" rel="noreferrer noopener nofollow" class="${CONFIG.classes.fileDownLink}" style="display:none;" title="「${mirror[1]}」\n\n[Alt + 左键点击] 或 [右键 - 另存为...] 下载文件。注意：鼠标点击 [☁] 图标，而不是左侧的文件名！\n\n${mirror[2]}\n\n提示：点击浏览器右上角 Tampermonkey 扩展图标 - [ ${mirror[1]} ] 加速源 (☁) 即可切换。">${ICONS[0]}</a>`);
-                
+
+                fileEl.insertAdjacentHTML('afterend', `<a href="${url}" download="${name}" target="_blank" rel="noreferrer noopener nofollow" class="${CONFIG.classes.fileDownLink}" style="display:none;" title="「${mirror[1]}」\n\n[Alt + 左键点击] 或 [右键 - 另存为...] 下载文件。注意：鼠标点击 [☁] 图标，而不是左侧的文件名！\n\n${mirror[2]}">${ICONS[0]}</a>`);
+
                 tr.onmouseover = mouseHandlers.over;
                 tr.onmouseout = mouseHandlers.out;
             });
@@ -598,11 +544,11 @@
     function addRawDownLinkEvent() {
         try {
             if (!GM_getValue(CONFIG.storageKeys.rawDownLink)) return;
-            
+
             const files = document.querySelectorAll(CONFIG.selectors.fileRow);
             if (files.length === 0) return;
             if (document.querySelectorAll(`.${CONFIG.classes.fileDownLink}`).length === 0) return;
-            
+
             files.forEach(fileEl => {
                 const tr = fileEl.parentNode?.parentNode;
                 if (tr) {
@@ -625,7 +571,7 @@
                 mutations.forEach(mutation => {
                     mutation.addedNodes.forEach(node => {
                         if (node.nodeType !== 1) return;
-                        
+
                         if (location.pathname.includes('/releases') && node.tagName === 'DIV' && node.dataset.viewComponent === 'true' && node.classList?.[0] === 'Box') {
                             addRelease();
                         } else if (document.querySelector('#repository-container-header:not([hidden])')) {
@@ -656,7 +602,7 @@
     function initObserver() {
         try {
             state.observer = new MutationObserver(handleMutations);
-            state.observer.observe(document.body, {childList: true, subtree: true});
+            state.observer.observe(document.body, { childList: true, subtree: true });
         } catch (error) {
             utils.error('初始化 DOM 观察器失败:', error);
         }
@@ -666,25 +612,13 @@
     // URL 变化监听
     // ============================================
     function addUrlChangeEvent() {
-        try {
-            history.pushState = ((f) => function pushState(...args) {
-                const ret = f.apply(this, args);
-                window.dispatchEvent(new Event('pushstate'));
-                window.dispatchEvent(new Event('urlchange'));
-                return ret;
-            })(history.pushState);
-
-            history.replaceState = ((f) => function replaceState(...args) {
-                const ret = f.apply(this, args);
-                window.dispatchEvent(new Event('replacestate'));
-                window.dispatchEvent(new Event('urlchange'));
-                return ret;
-            })(history.replaceState);
-
-            window.addEventListener('popstate', () => window.dispatchEvent(new Event('urlchange')));
-        } catch (error) {
-            utils.error('添加 URL 变化监听失败:', error);
-        }
+        window.addEventListener('urlchange', () => {
+            colorMode();
+            if (location.pathname.includes('/releases')) addRelease();
+            addRawFile();
+            addRawDownLink();
+            addRawDownLinkEvent();
+        });
     }
 
     // ============================================
@@ -693,28 +627,22 @@
     function init() {
         try {
             utils.log('脚本启动');
-            
+
             initConfig();
             injectStyles();
             colorMode();
             registerMenuCommand();
             initObserver();
-            
-            setTimeout(addRawFile, CONFIG.timeouts.rawFile);
-            setTimeout(addRawDownLink, CONFIG.timeouts.rawDownLink);
-            
-            if (window.onurlchange === undefined) {
+
+            // 直接执行
+            addRawFile();
+            addRawDownLink();
+
+            // GitHub 支持 urlchange 事件
+            if (window.onurlchange === null) {
                 addUrlChangeEvent();
             }
-            
-            window.addEventListener('urlchange', () => {
-                colorMode();
-                if (location.pathname.includes('/releases')) addRelease();
-                setTimeout(addRawFile, CONFIG.timeouts.rawFile);
-                setTimeout(addRawDownLink, CONFIG.timeouts.rawDownLink);
-                setTimeout(addRawDownLinkEvent, CONFIG.timeouts.rawDownLinkEvent);
-            });
-            
+
             utils.log('脚本初始化完成');
         } catch (error) {
             utils.error('脚本初始化失败:', error);
